@@ -122,6 +122,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+
+*.xml
+*.csv
 .dmypy.json
 dmypy.json
 
