@@ -2,13 +2,17 @@ import xml.etree.ElementTree as ET
 import pandas as PA
 #import xml.parsers.expat as EP
 import re as RE
+import os
 from typing import Dict, Any
 
 
 def load_bundle(path: str):
-    bundle_str = open(path, "r",encoding='utf-8').read()
-    bundle_str = RE.sub('\s*xmlns\s*=\s*"[^"]+\s*"', '', bundle_str)
-    return ET.fromstring(bundle_str)
+    bundle_str = open(path, "r", encoding='utf-8')
+    if bundle_str:
+        bundle_str =bundle_str.read()
+        bundle_str = RE.sub('\s*xmlns\s*=\s*"[^"]+\s*"', '', bundle_str)
+        return ET.fromstring(bundle_str)
+    return ""
 
 def bundle2df(bundle, design_df):
     #ns: Dict[Any, str] = dict(f="http://hl7.org/fhir")
@@ -74,11 +78,16 @@ def main():
         )
     }
 
+    print(os.getcwd())
+
     bundle = load_bundle('bundles/observations_with_patients_and_encounters_hapi.xml')
 
     dfs = dict([(k, bundle2df(bundle, design[k])) for k in design.keys()])
 
     print(dfs)
 
+    if not('csv' in os.listdir(".")):
+        os.mkdir("csv")
+
     for k in dfs.keys():
-        dfs[k].to_csv(k+".csv")
+        dfs[k].to_csv("csv/"+k+'.csv', sep=';', decimal='.')
