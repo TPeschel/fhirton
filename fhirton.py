@@ -54,8 +54,9 @@ def bundle2df(bundle, design_df, sep=' '):
                 # xp = RE.sub("/@[-\w]+$", "", table_design[col_name])
                 xp = table_design[col_name]
                 y = r.findall(xp)
-                z = [x.attrib['value'] if 'value' in x.attrib else 'NA' for x in y]
+                z = [x.attrib['value'] if 'value' in x.attrib else '' for x in y]
                 df[row][col] = sep.join(z)
+
                 col += 1
             row += 1
 

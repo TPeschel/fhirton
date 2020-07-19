@@ -53,15 +53,24 @@ if __name__ == '__main__':
     tables = ft.fhir_table(bundles, design)
 
     tables['Observations']['O.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Observations']['O.PID']]
+    tables['Observations']['O.EID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Observations']['O.EID']]
     tables['Encounters']['E.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Encounters']['E.PID']]
 
     tables['Total'] = pa.merge(tables['Observations'], tables['Patients'], left_on=['O.PID'], right_on=['P.PID'], how='inner')
     tables['Total'] = pa.merge(tables['Total'], tables['Encounters'], left_on=['O.PID'], right_on=['E.PID'], how='inner')
 
-#    print(tables)
+    tables['Total'] = tables['Total'][
+        ["O.PID", "O.OID", "O.EID",
+         "GVN.NAME", "FAM.NAME",
+         "DIA.VALUE", "DIA.UNIT", "DIA.SYSTEM",
+         "SYS.VALUE", "SYS.UNIT", "SYS.SYSTEM",
+         "DATE", "START", "END"]
+    ]
+
+    tables['Total'] = tables['Total'].sort_values(by=['O.PID', 'O.OID', 'O.EID', "START"], ascending=True)
 
     if not ('csv' in os.listdir(".")):
         os.mkdir("csv")
 
     for k in tables.keys():
-        tables[k].to_csv("csv/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8")
+        tables[k].to_csv("csv/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8",index=False, na_rep='')

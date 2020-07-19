@@ -5,6 +5,7 @@
 
 devtools::install_github("POLAR-fhir/fhircrackr@remove-value-in-design")
 
+library(dplyr)
 library('fhircrackr')
 
 endp <- "https://hapi.fhir.org/baseR4/"
@@ -56,13 +57,21 @@ bundles <- fhir_search(fsq, verbose=2)
 tables <- fhir_crack(bundles, design, sep = " ", add_indices = FALSE, verbose = 2)
 
 tables[['Observations']][['O.PID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Observations']][['O.PID']])
+tables[['Observations']][['O.EID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Observations']][['O.EID']])
 tables[['Encounters']][['E.PID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Encounters']][['E.PID']])
 
 
 tables[['Total']] <- merge(tables[['Observations']], tables[['Patients']], by.x='O.PID', by.y='P.PID', all=FALSE)
 tables[['Total']] <- merge(tables[['Total']], tables[['Encounters']], by.x='O.PID', by.y='E.PID', all=FALSE)
 
-#print(tables)
+tables[['Total']] <- tables[['Total']][, c(
+  "O.PID", "O.OID", "O.EID",
+  "GVN.NAME", "FAM.NAME", "DIA.VALUE", "DIA.UNIT", "DIA.SYSTEM",
+  "SYS.VALUE", "SYS.UNIT", "SYS.SYSTEM",
+  "DATE", "START", "END")
+]
+
+tables[['Total']] <- tables[['Total']] %>% arrange(O.PID, O.OID, O.EID, START)
 
 if (! dir.exists('csv'))
   dir.create( 'csv', recursive = T )
