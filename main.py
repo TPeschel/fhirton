@@ -5,7 +5,6 @@ import re
 if __name__ == '__main__':
 
     endp = "https://hapi.fhir.org/baseR4/"
-#    endp = "https://vonk.fire.ly/R4/"
     req  = "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 #    req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 

@@ -9,11 +9,10 @@ library(dplyr)
 library('fhircrackr')
 
 endp <- "https://hapi.fhir.org/baseR4/"
-#endp <- "https://vonk.fire.ly/R4/"
 req  <- "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
-#    req <- "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
+#req <- "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 
-fsq <- paste_paths(endp, req)
+fsq <- paste0(endp, req)
 
 design <- list(
   "Observations" = list(
