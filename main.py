@@ -1,4 +1,4 @@
-import core as co
+import fhirton as ft
 import os
 
 if __name__ == '__main__':
@@ -47,9 +47,9 @@ if __name__ == '__main__':
         )
     }
 
-    bundles = co.fhir_search(fsq)
+    bundles = ft.fhir_search(fsq)
 
-    tables = co.fhir_table(bundles, design)
+    tables = ft.fhir_table(bundles, design)
 
     print(tables)
 
