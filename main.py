@@ -1,6 +1,7 @@
 import fhirton as ft
 import os
-
+import pandas as pa
+import re
 if __name__ == '__main__':
 
     endp = "https://hapi.fhir.org/baseR4/"
@@ -51,10 +52,16 @@ if __name__ == '__main__':
 
     tables = ft.fhir_table(bundles, design)
 
+#    tables['Observations']['O.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Observations']['O.PID']]
+#    tables['Encounters']['E.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Encounters']['E.PID']]
+
+#    tables['Total'] = pa.merge(tables['Observations'], tables['Patients'], left_on=['O.PID'], right_on=['P.PID'], how='left')
+#    tables['Total'] = pa.merge(tables['Total'], tables['Encounters'], left_on=['O.PID'], right_on=['E.PID'], how='left')
+
     print(tables)
 
     if not ('csv' in os.listdir(".")):
         os.mkdir("csv")
 
     for k in tables.keys():
-        tables[k].to_csv("csv/"+k+".csv", sep=";", decimal=".", encoding="utf-8")
+        tables[k].to_csv("csv/"+k+"_python.csv", sep=";", decimal=".", encoding="utf-8")

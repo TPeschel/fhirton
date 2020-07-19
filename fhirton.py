@@ -37,7 +37,7 @@ def load_bundle(path: str):
     return None
 
 
-def bundle2df(bundle, design_df):
+def bundle2df(bundle, design_df, sep=' '):
     xpath_resource = design_df[0]
     table_design = design_df[1]
 
@@ -55,7 +55,7 @@ def bundle2df(bundle, design_df):
                 xp = table_design[col_name]
                 y = r.findall(xp)
                 z = [x.attrib['value'] if 'value' in x.attrib else 'NA' for x in y]
-                df[row][col] = ' '.join(z)
+                df[row][col] = sep.join(z)
                 col += 1
             row += 1
 
@@ -92,8 +92,8 @@ def fhir_search(req):
     return bundles
 
 
-def fhir_table(bundles, design):
-    dfs = [[bundle2df(bundle, design[k]) for bundle in bundles] for k in design.keys()]
+def fhir_table(bundles, design, sep=' '):
+    dfs = [[bundle2df(bundle, design[k], sep) for bundle in bundles] for k in design.keys()]
 
     dfs = dict([(d[1], PA.concat(d[0])) for d in zip(dfs, design.keys())])
 
