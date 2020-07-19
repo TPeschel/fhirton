@@ -55,11 +55,12 @@ bundles <- fhir_search(fsq, verbose=2)
 
 tables <- fhir_crack(bundles, design, sep = " ", add_indices = FALSE, verbose = 2)
 
-#    tables['Observations']['O.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Observations']['O.PID']]
-#    tables['Encounters']['E.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Encounters']['E.PID']]
+tables[['Observations']][['O.PID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Observations']][['O.PID']])
+tables[['Encounters']][['E.PID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Encounters']][['E.PID']])
 
-#    tables['Total'] = pa.merge(tables['Observations'], tables['Patients'], left_on=['O.PID'], right_on=['P.PID'], how='left')
-#    tables['Total'] = pa.merge(tables['Total'], tables['Encounters'], left_on=['O.PID'], right_on=['E.PID'], how='left')
+
+tables[['Total']] <- merge(tables[['Observations']], tables[['Patients']], by.x='O.PID', by.y='P.PID', all=FALSE)
+tables[['Total']] <- merge(tables[['Total']], tables[['Encounters']], by.x='O.PID', by.y='E.PID', all=FALSE)
 
 #print(tables)
 

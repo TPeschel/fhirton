@@ -1,7 +1,7 @@
-echo "first run fhircrackr solution...\n"
+echo "first run fhircrackr solution..."
 Rscript main.R
 
-echo "\nnext run fhirton solution...\n"
+echo "next run fhirton solution..."
 python3 main.py
 
 echo "Compare results in directory csv!"
