@@ -34,20 +34,20 @@ design <- list(
   "Encounters" = list(
     ".//Encounter",
     list(
-      "E.EID" = "id",
-      "E.PID" = "subject/reference",
-      "START" = "period/start",
-      "END" = "period/end"
+      "E.EID" = "./id",
+      "E.PID" = "./subject/reference",
+      "START" = "./period/start",
+      "END" = "./period/end"
     )
   ),
   "Patients" = list(
     ".//Patient",
     list(
-      "P.PID" = "id",
-      "GVN.NAME" = "name/given",
-      "FAM.NAME" = "name/family",
-      "SEX" = "gender",
-      "DOB" = "birthDate"
+      "P.PID" = "./id",
+      "GVN.NAME" = "./name/given",
+      "FAM.NAME" = "./name/family",
+      "SEX" = "./gender",
+      "DOB" = "./birthDate"
     )
   )
 )
@@ -66,7 +66,9 @@ tables[['Total']] <- merge(tables[['Total']], tables[['Encounters']], by.x='O.PI
 
 tables[['Total']] <- tables[['Total']][, c(
   "O.PID", "O.OID", "O.EID",
-  "GVN.NAME", "FAM.NAME", "DIA.VALUE", "DIA.UNIT", "DIA.SYSTEM",
+  "GVN.NAME", "FAM.NAME",
+  "DOB", "SEX",
+  "DIA.VALUE", "DIA.UNIT", "DIA.SYSTEM",
   "SYS.VALUE", "SYS.UNIT", "SYS.SYSTEM",
   "DATE", "START", "END")
 ]

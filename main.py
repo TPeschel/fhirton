@@ -30,20 +30,20 @@ if __name__ == '__main__':
         "Encounters": (
             ".//Encounter",
             {
-                "E.EID": "id",
-                "E.PID": "subject/reference",
-                "START": "period/start",
-                "END": "period/end"
+                "E.EID": "./id",
+                "E.PID": "./subject/reference",
+                "START": "./period/start",
+                "END": "./period/end"
             }
         ),
         "Patients": (
             ".//Patient",
             {
-                "P.PID": "id",
-                "GVN.NAME": "name/given",
-                "FAM.NAME": "name/family",
-                "SEX": "gender",
-                "DOB": "birthDate"
+                "P.PID": "./id",
+                "GVN.NAME": "./name/given",
+                "FAM.NAME": "./name/family",
+                "SEX": "./gender",
+                "DOB": "./birthDate"
             }
         )
     }
@@ -61,6 +61,7 @@ if __name__ == '__main__':
 
     tables['Total'] = tables['Total'][
         ["O.PID", "O.OID", "O.EID",
+         "DOB", "SEX",
          "GVN.NAME", "FAM.NAME",
          "DIA.VALUE", "DIA.UNIT", "DIA.SYSTEM",
          "SYS.VALUE", "SYS.UNIT", "SYS.SYSTEM",
