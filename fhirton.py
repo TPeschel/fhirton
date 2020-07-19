@@ -98,15 +98,3 @@ def fhir_table(bundles, design):
     dfs = dict([(d[1], PA.concat(d[0])) for d in zip(dfs, design.keys())])
 
     return dfs
-
-
-"""
-    if not('csv' in os.listdir(".")):
-        os.mkdir("csv")
-
-    i = 0
-    for d in dfs:
-        for k in d.keys():
-            d[k].to_csv("csv/"+k+str(i)+'.csv', sep=';', decimal='.')
-        i += 1
-"""
