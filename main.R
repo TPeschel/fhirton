@@ -1,9 +1,9 @@
-# Title     : Test
+# Title     : main.R
 # Objective : fhirton fhirckrar comparison
 # Created by: tpeschel
 # Created on: 19.07.20
 
-devtools::install_github("POLAR-fhir/fhircrackr")
+devtools::install_github("POLAR-fhir/fhircrackr@remove-value-in-design")
 
 library('fhircrackr')
 

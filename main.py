@@ -64,4 +64,4 @@ if __name__ == '__main__':
         os.mkdir("csv")
 
     for k in tables.keys():
-        tables[k].to_csv("csv/"+k+"_python.csv", sep=";", decimal=".", encoding="utf-8")
+        tables[k].to_csv("csv/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8")
