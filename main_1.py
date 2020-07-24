@@ -2,10 +2,12 @@ import fhirton as ft
 import os
 import pandas as pa
 import re
+
 if __name__ == '__main__':
 
     endp = "https://hapi.fhir.org/baseR4/"
     req  = "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
+    #req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 #    req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 
     fsq = endp + req
@@ -49,19 +51,22 @@ if __name__ == '__main__':
 
     bundles = ft.fhir_search(fsq)
 
-    tables = ft.fhir_table(bundles, design)
+    tables = ft.fhir_ton(bundles, design)
 
-    tables['Observations']['O.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Observations']['O.PID']]
-    tables['Observations']['O.EID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Observations']['O.EID']]
-    tables['Encounters']['E.PID'] = [re.sub("^.*/(\\w+$)", "\\1", p) for p in tables['Encounters']['E.PID']]
+    for k in tables.keys():
+        cols = tables[k].columns.values
+        cols = list(filter(lambda x: re.findall('[OPE].[OPE]ID', x), cols))
+        tables[k] = ft.rm_indices(tables[k], cols)
+        for c in cols:
+            tables[k][c] = [re.sub("^.*/(\\w+$)", "\\1", p) if p else None for p in tables[k][c]]
 
-    tables['Total'] = pa.merge(tables['Observations'], tables['Patients'], left_on=['O.PID'], right_on=['P.PID'], how='inner')
-    tables['Total'] = pa.merge(tables['Total'], tables['Encounters'], left_on=['O.PID'], right_on=['E.PID'], how='inner')
+    tables['Total'] = pa.merge(tables['Observations'], tables['Encounters'], left_on=['O.EID', 'O.PID'], right_on=['E.EID', 'E.PID'], how='left')
+    tables['Total'] = pa.merge(tables['Total'], tables['Patients'], left_on=['O.PID'], right_on=['P.PID'], how='left')
 
     tables['Total'] = tables['Total'][
         ["O.PID", "O.OID", "O.EID",
-         "DOB", "SEX",
          "GVN.NAME", "FAM.NAME",
+         "DOB", "SEX",
          "DIA.VALUE", "DIA.UNIT", "DIA.SYSTEM",
          "SYS.VALUE", "SYS.UNIT", "SYS.SYSTEM",
          "DATE", "START", "END"]
@@ -69,8 +74,8 @@ if __name__ == '__main__':
 
     tables['Total'] = tables['Total'].sort_values(by=['O.PID', 'O.OID', 'O.EID', "START"], ascending=True)
 
-    if not ('csv' in os.listdir(".")):
-        os.mkdir("csv")
+    if not ('csv1' in os.listdir(".")):
+        os.mkdir("csv1")
 
     for k in tables.keys():
-        tables[k].to_csv("csv/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8",index=False, na_rep='')
+        tables[k].to_csv("csv1/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8",index=False, na_rep='')
