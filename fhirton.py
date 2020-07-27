@@ -106,15 +106,15 @@ def bundle2table(bundle, design, sep, bra, typ, verbose=2):
     for resource_xml in resources_xml:
         if 2 < verbose:
             if i % 10 == 0:
-                print('{:02d}'.format(i // 10), end='')
+                print('{:03d}'.format(i), end='')
             else:
                 print('.', end='')
             if i % 100 == 99:
                 print()
         i += 1
         _.append(resource2row(resource_xml, design, sep, bra, typ, verbose))
-    if 2 < verbose:
-        print()
+    if 1 < verbose:
+        print('{:03d}'.format(len(_)))
     return _
 
 
@@ -122,6 +122,8 @@ def bundles2table(bundles, design, sep, bra, typ, verbose=2):
     _ = []
     for bundle in bundles:
         _.extend(bundle2table(bundle, design, sep, bra, typ, verbose))
+    if 1 < verbose:
+        print('total: {:03d}'.format(len(_)))
     return _
 
 
