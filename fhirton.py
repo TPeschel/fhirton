@@ -1,4 +1,3 @@
-from itertools import chain
 import pandas as PA
 import re as RE
 import requests as REQ
@@ -6,82 +5,38 @@ import math as MA
 import lxml.etree as LX
 
 
-def which_1st(x, y):
-    return x.index(y) if y in x else None
+def remove_namespaces(xml):
+    return RE.sub(' *xmlns *= *"[^"]+ *"', '', xml)
 
 
-def which_all(x, y):
-    _ = []
-    for __ in range(len(x)):
-        if x[__] == y:
-            _.append(__)
-    return _
-
-
-def which_fun(x, fun):
-    _ = []
-    for __ in range(len(x)):
-        if fun(x[__]):
-            _.append(__)
-    return _
-
-
-def list_fun(val_list, fun):
-    return [fun(v) for v in val_list]
-
-
-def log_from_list(val_list, fun):
-    _ = []
-    for v in val_list:
-        if fun(v):
-            _.append(v)
-    return _
-
-
-def list_sel_id(val_list, id_list):
-    return [val_list[_] if _ in range(len(val_list)) else None for _ in id_list]
-
-
-def list_sel_log(val_list, log_list):
-    return list_sel_id(val_list, [_ for _ in which_all(log_list, True)])
-
-
-def dict_sel_key(val_list, id_list):
-    return [val_list[_] if _ in val_list.keys() else None for _ in id_list]
-
-
-def dict_sel_id(val_list, id_list):
-    return [val_list[_] if _ in val_list.keys() else None for _ in id_list]
-
-
-def dict_sel_log(val_list, log_list):
-    _ = []
-    for __, ___ in zip(val_list.keys(), log_list):
-        if ___:
-            _ = [*_, val_list[__]]
-    return _
-
-
-def get_bundle(req: str):
+def get_bundle(req: str, rm_ns=True):
     bundle = REQ.get(req)
     bundle_str = str(bundle.content, encoding="utf-8")
     if bundle_str:
-        bundle_str = RE.sub('\s*xmlns\s*=\s*"[^"]+\s*"', '', bundle_str)
+        if rm_ns:
+            bundle_str = remove_namespaces(bundle_str)
         return LX.fromstring(bundle_str)
 
 
-def load_bundle(path: str):
-    bundle_str = open(path, "r", encoding='utf-8')
-    if bundle_str:
-        bundle_str = bundle_str.read()
-        bundle_str = RE.sub('\s*xmlns\s*=\s*"[^"]+\s*"', '', bundle_str)
+def load_bundle(path: str, rm_ns=True):
+    bundle = open(path, "r", encoding='utf-8')
+    if bundle:
+        bundle_str = bundle.read()
+        if rm_ns:
+            bundle_str = remove_namespaces(bundle_str)
         return LX.fromstring(bundle_str)
+
+
+def istype(value, types):
+    if isinstance(types, list) or isinstance(types, tuple):
+        return any([istype(value, t) for t in types])
+    return isinstance(value, types)
 
 
 def which_design(design):
-    if design and type(design) == tuple:
+    if istype(design, tuple):
         if 1 < len(design):
-            if dict == type(design[1]):
+            if istype(design[1], dict):
                 return 1
             else:
                 return 2
@@ -89,11 +44,7 @@ def which_design(design):
             return 3
 
 
-def list2string(lst, sep):
-    return sep.join([str(s) for s in lst]) if lst and list == type(lst) else lst
-
-
-def path2name(path):
+def get_name_and_id_from_path(path):
     p = RE.sub('^/[^/]+/', '', path)
     p = RE.sub('([^]])/', '\\1[1]/', p)
     p = RE.sub('([^]])$', '\\1[1]', p)
@@ -104,68 +55,89 @@ def path2name(path):
     return p, i
 
 
-
-
-def row2table(row_xml, design, sep, typ):
-    rt = LX.ElementTree(row_xml)
+def resource2row(resource_xml, design, sep, bra, typ, verbose=2):
+    rt = LX.ElementTree(resource_xml)
     if typ == 1:
         _ = {}
         for k in design[1].keys():
             xp = design[1][k]
-            for u in row_xml.xpath(xp):
+            for u in resource_xml.xpath(xp):
                 if 'value' in u.attrib:
                     pt = rt.getpath(u)
-                    n, i = path2name(pt)
                     attr = u.attrib['value']
-                    if k in _:
-                        _[k] = _[k] + sep + '[' + i + ']' + attr
+                    if bra:
+                        n, i = get_name_and_id_from_path(pt)
+                        if k in _:
+                            _[k] = _[k] + sep + bra[0] + i + bra[1] + attr
+                        else:
+                            _[k] = bra[0] + i + bra[1] + attr
                     else:
-                        _[k] = '[' + i + ']' + attr
+                        if k in _:
+                            _[k] = _[k] + sep + attr
+                        else:
+                            _[k] = attr
         return _
     if 2 <= typ:
         xp = design[1] if typ == 2 else ".//*"
         _ = {}
-        for u in row_xml.xpath(xp):
+        for u in resource_xml.xpath(xp):
             if 'value' in u.attrib:
                 pt = rt.getpath(u)
-                n, i = path2name(pt)
                 attr = u.attrib['value']
-                if n in _:
-                    _[n] = _[n] + sep + '[' + i + ']' + attr
+                n, i = get_name_and_id_from_path(pt)
+                if bra:
+                    if n in _:
+                        _[n] = _[n] + sep + bra[0] + i + bra[1] + attr
+                    else:
+                        _[n] = bra[0] + i + bra[1] + attr
                 else:
-                    _[n] = '[' + i + ']' + attr
+                    if n in _:
+                        _[n] = _[n] + sep + attr
+                    else:
+                        _[n] = attr
         return _
 
 
-def bundle2table(bundle, design, sep, typ):
-    xp_res = design[0]
-    xml_res = bundle.xpath(xp_res)
+def bundle2table(bundle, design, sep, bra, typ, verbose=2):
+    resource_xpath = design[0]
+    resources_xml = bundle.xpath(resource_xpath)
     _ = []
-    for row in xml_res:
-        _.append(row2table(row, design, sep, typ))
+    i = 0
+    for resource_xml in resources_xml:
+        if 2 < verbose:
+            if i % 10 == 0:
+                print('{:02d}'.format(i // 10), end='')
+            else:
+                print('.', end='')
+            if i % 100 == 99:
+                print()
+        i += 1
+        _.append(resource2row(resource_xml, design, sep, bra, typ, verbose))
+    if 2 < verbose:
+        print()
     return _
-    # return [row2table(row, design, sep, typ) for row in xml_res]
 
 
-def bundles2table(bundles, design, sep, typ):
+def bundles2table(bundles, design, sep, bra, typ, verbose=2):
     _ = []
     for bundle in bundles:
-        _.extend(bundle2table(bundle, design, sep, typ))
-    print('#', end='')
+        _.extend(bundle2table(bundle, design, sep, bra, typ, verbose))
     return _
 
 
-#    return [bundle2table(bundle, design, sep, typ) for bundle in bundles]
-
-
-def bundles2tables(bundles, designs, sep):
+def bundles2tables(bundles, designs, sep, bra, verbose=2):
+    if 0 < verbose:
+        print('Extract bundles to tables.')
     _ = dict()
     for k in designs.keys():
         typ = which_design(designs[k])
-        d = bundles2table(bundles, designs[k], sep, typ)
+        if not typ:
+            continue
+        if 1 < verbose:
+            print(k)
+        d = bundles2table(bundles, designs[k], sep, bra, typ, verbose)
         if 1 == typ:
             cn = [n for n in designs[k][1].keys()]
-            tb = dict([(k, list()) for k in cn])
         else:
             cn = []
             for e in d:
@@ -183,115 +155,43 @@ def bundles2tables(bundles, designs, sep):
         _[k] = __
     return _
 
-def rm_indices(df, cols=None):
-    if cols:
-        for c in cols:
-            df[c] = [RE.sub('\\[[0-9+.]+]', '', d) if d else None for d in df[c]]
-    else:
-        for c in df.columns.values :
-            df[c] = [RE.sub('\\[[0-9+.]+]', '', d) if d else None for d in df[c]]
+
+def esc(s):
+    return RE.sub("([\\.|\\^|\\$|\\*|\\+|\\?|\\(|\\)|\\[|\\{|\\\\\\|\\|])", "\\\\\\1", s)
+
+
+def rm_indices(df, cols=None, bra=('[', ']')):
+    pt = esc(bra[0]) + '[0-9+.]+' + esc(bra[1])
+    if not cols:
+        cols = df.columns.values
+    for c in cols:
+        df[c] = [RE.sub(pt, '', d) if d else None for d in df[c]]
     return df
 
-def fhir_ton(bundles, designs, sep=' '):
-    _ = bundles2tables(bundles, designs, sep)
+
+def fhir_ton(bundles, designs, sep=' | ', bra=('<', '>'), verbose=1):
+    _ = bundles2tables(bundles, designs, sep, bra, verbose)
     return _
 
 
-# def dsgn1(bundle, design1_df, sep=' '):
-#     xpath_resource = design1_df[0]
-#     xml_res = bundle.findall(xpath_resource)
-#     table_design = design1_df[1]
-#     if 0 < len(xml_res):
-#         df = [[0 for x in range(len(table_design.keys()))] for y in range(len(xml_res))]
-#         row = 0
-#         for r in xml_res:
-#             col = 0
-#             for col_name in table_design.keys():
-#                 xp = table_design[col_name]
-#                 y = r.findall(xp)
-#                 z = [x.attrib['value'] if 'value' in x.attrib else '' for x in y]
-#                 df[row][col] = sep.join(z)
-#                 col += 1
-#             row += 1
-#         df = PA.DataFrame(df)
-#         df.columns = [str(k) for k in table_design.keys()]
-#         return df
-#
-#
-# #   return None
-#
-# def dsgn2(bundle, design2_df, sep=' '):
-#     xpath_resource = design2_df[0]
-#     xml_res = bundle.xpath(xpath_resource)
-#
-#     xp_col = design2_df[1]
-#
-#     nv = []
-#     if 0 < len(xml_res):
-#         for r in xml_res:
-#             res = r.xpath(xp_col)
-#             rt = LX.ElementTree(r)
-#             nv.append(
-#                 dict([(RE.sub("(\\[)([0-9]+)(])", ".\\2", RE.sub("/", ".", RE.sub("^/[^/]+/", "", rt.getpath(e)))),
-#                        e.attrib['value'] if 'value' in e.attrib else PA.NA) for e in res]))
-#
-#     cn = []
-#     for i in nv:
-#         cn.append([i for i in i.keys()])
-#     cn.sort()
-#
-#     df = [[y[x] for x in cn] for y in nv]
-#     df = PA.DataFrame(df)
-#
-#     n = df.columns.values
-#     for i in n:
-#         if df[i].isna().all():
-#             df = df.drop(columns=i)
-#     return df
-#
-#
-# """        df = [[0 for x in range(len(table_design.keys()))] for y in range(len(xml_res))]
-#         row = 0
-#         for r in xml_res:
-#             col = 0
-#             for col_name in table_design.keys():
-#                 xp = table_design[col_name]
-#                 y = r.findall(xp)
-#                 z = [x.attrib['value'] if 'value' in x.attrib else '' for x in y]
-#                 df[row][col] = sep.join(z)
-#                 col += 1
-#             row += 1
-#         df = PA.DataFrame(df)
-#         df.columns = [str(k) for k in table_design.keys()]
-#         return df
-#  #   return None
-# """
-#
-#
-# def dsgn3(bundle, design2_df, sep=' '):
-#     xpath_resource = design2_df[0]
-#     xml_res = bundle.xpath(xpath_resource)
-#
-#
-# def bundle2df(bundle, design_df, sep=' '):
-#     if 1 < len(design_df):
-#         table_design = design_df[1]
-#         if list == type(table_design):
-#             return dsgn1(bundle, design_df, sep=sep)
-#         else:
-#             return dsgn2(bundle, design_df, sep=sep)
-#     return dsgn3(bundle, design_df, sep=sep)
-
-
-def fhir_search(req, max_bundles=MA.inf):
+def fhir_search(req, verbose=1, max_bundles=MA.inf):
+    if 0 < verbose:
+        url = RE.sub("(^https*://[^/]+/[^/]+).+", "\\1", req)
+        res = RE.sub("(^https*://[^/]+/[^/]+)/([^?]+).*", "\\2", req)
+        par = RE.sub("^.*\\?(.*)$", "\\1", req)
+        print("Download " +
+              ("all" if max_bundles is MA.inf else str(max_bundles)) + " bundles of type: " + res +
+              "\nwith search parameters: " + par + "\nfrom fhir endpoint: " + url)
     bundles = []
     r_cnt = 0
     while req:
         if max_bundles <= r_cnt:
-            print(str(r_cnt) + " bundles downloaded.")
+            if 0 < verbose:
+                print(str(r_cnt) + " bundles downloaded.")
             return bundles
         r_cnt += 1
-        print(str(r_cnt) + " : " + req)
+        if 1 < verbose:
+            print(str(r_cnt) + " : " + req)
         bundle = get_bundle(req=req)
         req = None
         if 0 < len(bundle):
@@ -301,13 +201,9 @@ def fhir_search(req, max_bundles=MA.inf):
             u = bundle.xpath(".//link/url")
             s = [x.attrib['value'] for x in r]
             if 0 < len(s):
-                n = which_1st(s, 'next')
+                n = s.index('next') if 'next' in s else None
                 if n:
                     req = u[n].attrib['value']
-    print("All (", str(r_cnt) + " ) bundles downloaded.")
+    if 0 < verbose:
+        print("All (", str(r_cnt) + " ) bundles downloaded.")
     return bundles
-
-# def fhir_ton(bundles, design, sep=' '):
-#     dfs = [[bundle2df(bundle, design[k], sep) for bundle in bundles] for k in design.keys()]
-#     dfs = dict([(d[1], PA.concat(d[0])) for d in zip(dfs, design.keys())])
-#     return dfs

@@ -15,6 +15,9 @@ req  <- "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&
 fsq <- paste0(endp, req)
 
 design <- list(
+  "Meta" = list(
+    "Identifier" = "Observations_Encounters_Patients_Blood_Pressure"
+  ),
   "Observations" = list(
     ".//Observation",
     list(

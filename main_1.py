@@ -6,26 +6,29 @@ import re
 if __name__ == '__main__':
 
     endp = "https://hapi.fhir.org/baseR4/"
-    req  = "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
-    #req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
-#    req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
+    
+    req = "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter" \
+          "&_format=xml&_pretty=true&_count=500"
 
     fsq = endp + req
 
     design = {
+        "Meta": {
+            "Identifier": "Observations_Encounters_Patients_Blood_Pressure"
+        },
         "Observations": (
             ".//Observation",
             {
-                "O.OID": "./id",
-                "O.PID": "./subject/reference",
-                "O.EID": "./encounter/reference",
-                "DIA.VALUE": "./component/code/coding/code[@value='8462-4']/../../../valueQuantity/value",
-                "DIA.UNIT": "./component/code/coding/code[@value='8462-4']/../../../valueQuantity/unit",
+                "O.OID":      "./id",
+                "O.PID":      "./subject/reference",
+                "O.EID":      "./encounter/reference",
+                "DIA.VALUE":  "./component/code/coding/code[@value='8462-4']/../../../valueQuantity/value",
+                "DIA.UNIT":   "./component/code/coding/code[@value='8462-4']/../../../valueQuantity/unit",
                 "DIA.SYSTEM": "./component/code/coding/code[@value='8462-4']/../system",
-                "SYS.VALUE": "./component/code/coding/code[@value='8480-6']/../../../valueQuantity/value",
-                "SYS.UNIT": "./component/code/coding/code[@value='8480-6']/../../../valueQuantity/unit",
+                "SYS.VALUE":  "./component/code/coding/code[@value='8480-6']/../../../valueQuantity/value",
+                "SYS.UNIT":   "./component/code/coding/code[@value='8480-6']/../../../valueQuantity/unit",
                 "SYS.SYSTEM": "./component/code/coding/code[@value='8480-6']/../system",
-                "DATE": "./effectiveDateTime"
+                "DATE":       "./effectiveDateTime"
             }
         ),
         "Encounters": (
@@ -34,7 +37,7 @@ if __name__ == '__main__':
                 "E.EID": "./id",
                 "E.PID": "./subject/reference",
                 "START": "./period/start",
-                "END": "./period/end"
+                "END":   "./period/end"
             }
         ),
         "Patients": (
@@ -49,14 +52,14 @@ if __name__ == '__main__':
         )
     }
 
-    bundles = ft.fhir_search(fsq)
+    bundles = ft.fhir_search(fsq, verbose=3)
 
-    tables = ft.fhir_ton(bundles, design)
+    tables = ft.fhir_ton(bundles, design, verbose=3)
 
     for k in tables.keys():
         cols = tables[k].columns.values
         cols = list(filter(lambda x: re.findall('[OPE].[OPE]ID', x), cols))
-        tables[k] = ft.rm_indices(tables[k], cols)
+        tables[k] = ft.rm_indices(tables[k], cols, ['[', ']'])
         for c in cols:
             tables[k][c] = [re.sub("^.*/(\\w+$)", "\\1", p) if p else None for p in tables[k][c]]
 

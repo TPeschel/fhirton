@@ -6,9 +6,12 @@ import re
 if __name__ == '__main__':
 
     endp = "https://hapi.fhir.org/baseR4/"
-    req  = "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
-    #req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
-#    req = "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
+
+    req = "Observation?" \
+          "code=http://loinc.org|85354-9&" \
+          "_include=Observation:patient&" \
+          "_include=Observation:encounter&" \
+          "_format=xml&_pretty=true&_count=500" \
 
     fsq = endp + req
 
@@ -18,14 +21,14 @@ if __name__ == '__main__':
         "Patients": (".//Patient",)
     }
 
-    bundles = ft.fhir_search(fsq)
+    bundles = ft.fhir_search(fsq, 2)
 
-    tables = ft.fhir_ton(bundles, design)
+    tables = ft.fhir_ton(bundles, design, " ", ["[", "]"], 3)
 
     for k in tables.keys():
         cols = tables[k].columns.values
         cols = list(filter(lambda x: re.findall('((encounter|subject)\\.reference$)|(id$)', x), cols))
-        tables[k] = ft.rm_indices(tables[k], cols)
+        tables[k] = ft.rm_indices(tables[k], cols, ['[', ']'])
         for c in cols:
             tables[k][c] = [re.sub("^.*/(\\w+$)", "\\1", p) if p else None for p in tables[k][c]]
 
@@ -42,7 +45,7 @@ if __name__ == '__main__':
         right_on=['id'], how='left')
 
     tables['Total'] = tables['Total'][
-        ["subject.reference", 'id', 'id_x', "encounter.reference",
+        ["subject.reference", 'id_x', "encounter.reference",
          "name.given", "name.family",
          "birthDate", "gender",
          "component.valueQuantity.value", "component.valueQuantity.unit",
@@ -51,6 +54,23 @@ if __name__ == '__main__':
     ]
 
     tables['Total'] = tables['Total'].sort_values(by=['subject.reference', 'id_x', 'encounter.reference', "period.start"], ascending=True)
+
+    # rn = dict([(o, n) for o, n in zip([
+    #     "subject.reference", 'id_x', "encounter.reference",
+    #     "name.given", "name.family",
+    #     "birthDate", "gender",
+    #     "component.valueQuantity.value", "component.valueQuantity.unit",
+    #     "component.valueQuantity.system", "component.valueQuantity.code",
+    #     "effectiveDateTime", "period.start", "period.end"], [
+    #     "PID", 'OID', "EID",
+    #     "GVN.NAME", "FAM.NAME",
+    #     "DOB", "SEX",
+    #     "VALUE", "UNIT",
+    #     "SYSTEM", "CODE",
+    #     "DATE", "START", "END"
+    # ])])
+
+    # tables['Total'].rename(columns=rn, inplace=True)
 
     if not ('csv2' in os.listdir(".")):
         os.mkdir("csv2")
