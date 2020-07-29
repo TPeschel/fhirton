@@ -27,8 +27,8 @@ def designs2xml(designs):
             xml_meta = LX.SubElement(xml_designs, k)
             for i, j in design.items():
                 LX.SubElement(xml_meta, i,  {'value': str(j)})
-
     return xml_designs
+
 
 designs = {
     "Meta": {
@@ -70,11 +70,15 @@ designs = {
     )
 }
 
+print(t2s(designs))
 
 
-b = fhir_search("https://vonk.fire.ly/R4/Patient?_format=xml&_count=500", max_bundles = 20, verbose = 3)
-d = fhir_ton(b,{"Pat":(".//Patient",)},' ', ['[', ']'], 3)
-print(d)
+b = fhir_search("https://vonk.fire.ly/R4/Patient?_format=xml&_count=500&_revinclude=*", 3, 10)
+d = fhir_ton(b, {"Pat": (".//Patient",)}, ' ', ['[', ']'], 3)
+
+d['Pat'] = d['Pat'][d['Pat'].columns.sort_values()]
+print(d['Pat'])
+
 
 # xml_designs = designs2xml(designs)
 # LX.dump(xml_designs)
@@ -82,3 +86,8 @@ print(d)
 # #     f.write(LX.tostring(xml_designs, pretty_print=True))
 #
 # print(tree2str(designs))
+
+d = fhir_ton(b, {"Res": ("/Bundle/entry/resource/*",)})
+
+for i in d:
+    print(d[i])

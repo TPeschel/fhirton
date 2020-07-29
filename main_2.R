@@ -3,7 +3,7 @@
 # Created by: tpeschel
 # Created on: 19.07.20
 
-devtools::install_github("POLAR-fhir/fhircrackr", quiet = T)
+install.packages( "fhircrackr" )
 
 library('dplyr')
 library('fhircrackr')

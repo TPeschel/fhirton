@@ -104,15 +104,18 @@ def bundle2table(bundle, design, sep, bra, typ, verbose=2):
     _ = []
     i = 0
     for resource_xml in resources_xml:
+        row = resource2row(resource_xml, design, sep, bra, typ, verbose)
         if 2 < verbose:
             if i % 10 == 0:
                 print('{:03d}'.format(i), end='')
-            else:
+            if row and any(row):
                 print('.', end='')
+            else:
+                print('x', end='')
             if i % 100 == 99:
                 print()
         i += 1
-        _.append(resource2row(resource_xml, design, sep, bra, typ, verbose))
+        _.append(row)
     if 1 < verbose:
         print('{:03d}'.format(len(_)))
     return _
