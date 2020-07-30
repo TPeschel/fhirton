@@ -3,21 +3,22 @@
 # Created by: tpeschel
 # Created on: 19.07.20
 
-#devtools::install_github("POLAR-fhir/fhircrackr", quiet = T)
-install.packages( 'fhircrackr' )
+devtools::install_github("POLAR-fhir/fhircrackr", quiet = F, force = T)
+#install.packages( 'fhircrackr' )
 library('dplyr')
 library('fhircrackr')
 
+# fhir endpoint
 endp <- "https://hapi.fhir.org/baseR4/"
+
+# fhir request
 req  <- "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 #req <- "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 
 fsq <- paste0(endp, req)
 
-design <- list(
-  "Meta" = list(
-    "Identifier" = "Observations_Encounters_Patients_Blood_Pressure"
-  ),
+# designs 1, 1, 1
+designs <- list(
   "Observations" = list(
     ".//Observation",
     list(
@@ -54,18 +55,27 @@ design <- list(
   )
 )
 
-bundles <- fhir_search(fsq, verbose=2)
+# download fhir bundles and babble a lot
+bundles <- fhir_search(fsq, verbose=2, max_bundles=5)
 
-tables <- fhir_crack(bundles, design, sep = " ", add_indices = FALSE, verbose = 2)
+# crack/flatten the downloaded bundles to tables via designs and babble a lot
+tables <- fhir_crack(bundles, designs, sep = " ", brackets = c('[', ']'), verbose = 3)
 
+# delete indices for ids
+tables[['Observations']] <- fhir_rm_indices(tables[['Observations']], brackets = c('[', ']'), columns = c( 'O.OID', 'O.EID', 'O.PID'))
+tables[['Encounters']] <- fhir_rm_indices(tables[['Encounters']], brackets = c('[', ']'), columns = c( 'E.EID', 'E.PID'))
+tables[['Patients']] <- fhir_rm_indices(tables[['Patients']], brackets = c('[', ']'), columns = c( 'P.PID'))
+
+# delete prefixes for ids
 tables[['Observations']][['O.PID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Observations']][['O.PID']])
 tables[['Observations']][['O.EID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Observations']][['O.EID']])
 tables[['Encounters']][['E.PID']] <- sub("^.*/(\\w+$)", "\\1", tables[['Encounters']][['E.PID']])
 
+# merge all tables
+tables[['Total']] <- merge(tables[['Observations']], tables[['Encounters']], by.x=c('O.EID', 'O.PID'), by.y=c('E.EID', 'E.PID'), all=FALSE)
+tables[['Total']] <- merge(tables[['Total']], tables[['Patients']], by.x='O.PID', by.y='P.PID', all=FALSE)
 
-tables[['Total']] <- merge(tables[['Observations']], tables[['Patients']], by.x='O.PID', by.y='P.PID', all=FALSE)
-tables[['Total']] <- merge(tables[['Total']], tables[['Encounters']], by.x='O.PID', by.y='E.PID', all=FALSE)
-
+# select some interesting columns
 tables[['Total']] <- tables[['Total']][, c(
   "O.PID", "O.OID", "O.EID",
   "GVN.NAME", "FAM.NAME",
@@ -75,10 +85,13 @@ tables[['Total']] <- tables[['Total']][, c(
   "DATE", "START", "END")
 ]
 
+# sort table columns
 tables[['Total']] <- tables[['Total']] %>% arrange(O.PID, O.OID, O.EID, START)
 
-if (! dir.exists('csv'))
-  dir.create( 'csv', recursive = T )
+# create dir if not exists
+if (! dir.exists('csv1'))
+  dir.create( 'csv1', recursive = T )
 
+# save tables as csv files
 for (n in names(tables))
-  write.table(tables[[n]], paste0("csv/", n, "_r.csv" ), na = "", sep = ";", dec = ".", row.names = F, quote = F )
+  write.table(tables[[n]], paste0("csv1/", n, "_r.csv" ), na = "", sep = ";", dec = ".", row.names = F, quote = F )

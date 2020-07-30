@@ -121,7 +121,7 @@ def bundle2table(bundle, design, sep, bra, typ, verbose=2):
     return _
 
 
-def bundles2table(bundles, design, sep, bra, typ, verbose=2):
+def bundles2table(bundles, design, sep, bra, typ=3, verbose=2):
     _ = []
     for bundle in bundles:
         _.extend(bundle2table(bundle, design, sep, bra, typ, verbose))
@@ -130,7 +130,7 @@ def bundles2table(bundles, design, sep, bra, typ, verbose=2):
     return _
 
 
-def bundles2tables(bundles, designs, sep, bra, verbose=2):
+def bundles2tables(bundles, designs, sep, bra=None, verbose=2):
     if 0 < verbose:
         print('Extract bundles to tables.')
     _ = dict()
@@ -165,8 +165,8 @@ def esc(s):
     return RE.sub("([\\.|\\^|\\$|\\*|\\+|\\?|\\(|\\)|\\[|\\{|\\\\\\|\\|])", "\\\\\\1", s)
 
 
-def rm_indices(df, cols=None, bra=('[', ']')):
-    pt = esc(bra[0]) + '[0-9+.]+' + esc(bra[1])
+def rm_indices(df, cols=None, bra=('<', '>')):
+    pt = esc(bra[0]) + '[0-9*.*]' + esc(bra[1])
     if not cols:
         cols = df.columns.values
     for c in cols:
@@ -174,8 +174,9 @@ def rm_indices(df, cols=None, bra=('[', ']')):
     return df
 
 
-def fhir_ton(bundles, designs, sep=' | ', bra=('<', '>'), verbose=1):
-    _ = bundles2tables(bundles, designs, sep, bra, verbose)
+def fhir_ton(bundles, designs, sep=' | ', remove_empty_cols=True, bra=('<', '>'), verbose=1):
+    _ = bundles2tables(bundles=bundles, designs=designs,
+                       sep=sep, bra=bra, verbose=verbose)
     return _
 
 

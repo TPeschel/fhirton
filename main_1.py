@@ -5,17 +5,17 @@ import re
 
 if __name__ == '__main__':
 
+    # fhir endpoint
     endp = "https://hapi.fhir.org/baseR4/"
     
+    # fhir request
     req = "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter" \
           "&_format=xml&_pretty=true&_count=500"
 
     fsq = endp + req
 
-    design = {
-        "Meta": {
-            "Identifier": "Observations_Encounters_Patients_Blood_Pressure"
-        },
+    # designs 1, 1, 1
+    designs = {
         "Observations": (
             ".//Observation",
             {
@@ -52,10 +52,13 @@ if __name__ == '__main__':
         )
     }
 
+    # download fhir bundles and babble a lot
     bundles = ft.fhir_search(fsq, verbose=3)
 
-    tables = ft.fhir_ton(bundles, design, verbose=3)
+    # crack/flatten the downloaded bundles to tables via designs and babble a lot
+    tables = ft.fhir_ton(bundles, designs, sep=' ', bra=('[', ']'), verbose=3)
 
+    # delete indices and prefixes for ids and references for merge
     for k in tables.keys():
         cols = tables[k].columns.values
         cols = list(filter(lambda x: re.findall('[OPE].[OPE]ID', x), cols))
@@ -63,9 +66,13 @@ if __name__ == '__main__':
         for c in cols:
             tables[k][c] = [re.sub("^.*/(\\w+$)", "\\1", p) if p else None for p in tables[k][c]]
 
-    tables['Total'] = pa.merge(tables['Observations'], tables['Encounters'], left_on=['O.EID', 'O.PID'], right_on=['E.EID', 'E.PID'], how='left')
-    tables['Total'] = pa.merge(tables['Total'], tables['Patients'], left_on=['O.PID'], right_on=['P.PID'], how='left')
+    # merge all tables
+    tables['Total'] = pa.merge(tables['Observations'], tables['Encounters'],
+                               left_on=['O.EID', 'O.PID'], right_on=['E.EID', 'E.PID'], how='inner')
+    tables['Total'] = pa.merge(tables['Total'], tables['Patients'],
+                               left_on=['O.PID'], right_on=['P.PID'], how='inner')
 
+    # select some interesting columns
     tables['Total'] = tables['Total'][
         ["O.PID", "O.OID", "O.EID",
          "GVN.NAME", "FAM.NAME",
@@ -75,10 +82,13 @@ if __name__ == '__main__':
          "DATE", "START", "END"]
     ]
 
+    # sort table columns
     tables['Total'] = tables['Total'].sort_values(by=['O.PID', 'O.OID', 'O.EID', "START"], ascending=True)
 
+    # create dir if not exists
     if not ('csv1' in os.listdir(".")):
         os.mkdir("csv1")
 
+    # save tables as csv files
     for k in tables.keys():
         tables[k].to_csv("csv1/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8", index=False, na_rep='')

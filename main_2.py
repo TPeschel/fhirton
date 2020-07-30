@@ -1,79 +1,43 @@
 import fhirton as ft
 import os
-import pandas as pa
-import re
 
 if __name__ == '__main__':
 
+    # fhir endpoint
     endp = "https://hapi.fhir.org/baseR4/"
 
+    # fhir request
     req = "Observation?" \
           "code=http://loinc.org|85354-9&" \
           "_include=Observation:patient&" \
           "_include=Observation:encounter&" \
           "_format=xml&_pretty=true&_count=500" \
 
-    fsq = endp + req
+    req = endp + req
 
-    design = {
+    # designs 3, 2, 3
+    designs = {
         "Observations": (".//Observation",),
         "Encounters": (".//Encounter", './/*'),
         "Patients": (".//Patient",)
     }
 
-    bundles = ft.fhir_search(fsq, 2)
+    # download fhir bundles and babble a lot
+    bundles = ft.fhir_search(req=req, verbose=2)
 
-    tables = ft.fhir_ton(bundles, design, " ", ["[", "]"], 3)
+    # crack/flatten the downloaded bundles to tables via designs
+    # use space as separator and [] as brackets for indexing and babble a lot
+    tables = ft.fhir_ton(bundles=bundles, designs=designs, sep=" ", bra=["[", "]"], verbose=3)
 
+    # sort column names
     for k in tables.keys():
-        cols = tables[k].columns.values
-        cols = list(filter(lambda x: re.findall('((encounter|subject)\\.reference$)|(id$)', x), cols))
-        tables[k] = ft.rm_indices(tables[k], cols, ['[', ']'])
-        for c in cols:
-            tables[k][c] = [re.sub("^.*/(\\w+$)", "\\1", p) if p else None for p in tables[k][c]]
+        tables[k].sort_index(axis=1, inplace=True)
 
-    tables['Total'] = pa.merge(
-        tables['Observations'],
-        tables['Encounters'],
-        left_on=['encounter.reference', 'subject.reference'],
-        right_on=['id', 'subject.reference'], how='left')
-
-    tables['Total'] = pa.merge(
-        tables['Total'],
-        tables['Patients'],
-        left_on=['subject.reference'],
-        right_on=['id'], how='left')
-
-    tables['Total'] = tables['Total'][
-        ["subject.reference", 'id_x', "encounter.reference",
-         "name.given", "name.family",
-         "birthDate", "gender",
-         "component.valueQuantity.value", "component.valueQuantity.unit",
-         "component.valueQuantity.system", "component.valueQuantity.code",
-         "effectiveDateTime", "period.start", "period.end"]
-    ]
-
-    tables['Total'] = tables['Total'].sort_values(by=['subject.reference', 'id_x', 'encounter.reference', "period.start"], ascending=True)
-
-    # rn = dict([(o, n) for o, n in zip([
-    #     "subject.reference", 'id_x', "encounter.reference",
-    #     "name.given", "name.family",
-    #     "birthDate", "gender",
-    #     "component.valueQuantity.value", "component.valueQuantity.unit",
-    #     "component.valueQuantity.system", "component.valueQuantity.code",
-    #     "effectiveDateTime", "period.start", "period.end"], [
-    #     "PID", 'OID', "EID",
-    #     "GVN.NAME", "FAM.NAME",
-    #     "DOB", "SEX",
-    #     "VALUE", "UNIT",
-    #     "SYSTEM", "CODE",
-    #     "DATE", "START", "END"
-    # ])])
-
-    # tables['Total'].rename(columns=rn, inplace=True)
-
+    # create dir if not exist
     if not ('csv2' in os.listdir(".")):
         os.mkdir("csv2")
 
+    # write tables as csv files
     for k in tables.keys():
         tables[k].to_csv("csv2/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8", index=False, na_rep='')
+
