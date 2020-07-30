@@ -173,7 +173,7 @@ def bundles2tables(bundles, designs, sep, bra=None, verbose=2):
     return _
 
 
-def fhir_ton(bundles, designs, sep=' | ', remove_empty_cols=True, bra=('<', '>'), verbose=1):
+def fhir_ton(bundles, designs, sep=' | ', bra=('<', '>'), verbose=1):
     _ = bundles2tables(bundles=bundles, designs=designs,
                        sep=sep, bra=bra, verbose=verbose)
     return _

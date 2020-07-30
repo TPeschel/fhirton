@@ -1,3 +1,4 @@
+import os
 from fhirton import *
 import lxml.etree as LX
 from treestring import *
@@ -73,21 +74,20 @@ designs = {
 print(t2s(designs))
 
 
-b = fhir_search("https://vonk.fire.ly/R4/Patient?_format=xml&_count=500&_revinclude=*", 3, 10)
-d = fhir_ton(b, {"Pat": (".//Patient",)}, ' ', ['[', ']'], 3)
+b = fhir_search("https://vonk.fire.ly/R4/Observation?_format=xml&_count=500&_include=Observation:patient&_include=Observation:encounter", 3, 50)
+print(t2s(designs))
 
-d['Pat'] = d['Pat'][d['Pat'].columns.sort_values()]
-print(d['Pat'])
+# extract everything
+d = fhir_ton(b, {"Res": ("/Bundle/entry/resource/*/..",)})
 
-
-# xml_designs = designs2xml(designs)
-# LX.dump(xml_designs)
-# # with open("/home/tpeschel/POLAR/repos/fhirton/xml/design_oep.xml", "wb") as f:
-# #     f.write(LX.tostring(xml_designs, pretty_print=True))
-#
-# print(tree2str(designs))
-
-d = fhir_ton(b, {"Res": ("/Bundle/entry/resource/*",)})
-
+# sort column names
 for i in d:
-    print(d[i])
+    d[i] = d[i][d[i].columns.sort_values()]
+
+# create dir if not exist
+if not ('csv3' in os.listdir(".")):
+    os.mkdir("csv3")
+
+# write tables as csv files
+for k in d:
+    d[k].to_csv("csv3/" + k + "_python.csv", sep=";", decimal=".", encoding="utf-8", index=False, na_rep='')
