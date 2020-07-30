@@ -73,12 +73,13 @@ designs = {
 
 print(t2s(designs))
 
+b = fhir_search("https://vonk.fire.ly/R4/Observation?"
+                "_format=xml&_count=500&_include=Observation:patient&_include=Observation:encounter", 3, 50)
 
-b = fhir_search("https://vonk.fire.ly/R4/Observation?_format=xml&_count=500&_include=Observation:patient&_include=Observation:encounter", 3, 50)
 print(t2s(designs))
 
 # extract everything
-d = fhir_ton(b, {"Res": ("/Bundle/entry/resource/*/..",)})
+d = fhir_ton(b, {"All_Resources": ("/Bundle/entry/resource/*/..",)}, verbose=3)
 
 # sort column names
 for i in d:
