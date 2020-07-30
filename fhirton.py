@@ -44,6 +44,19 @@ def which_design(design):
             return 3
 
 
+def esc(s):
+    return RE.sub("([\\.|\\^|\\$|\\*|\\+|\\?|\\(|\\)|\\[|\\{|\\\\\\|\\|])", "\\\\\\1", s)
+
+
+def rm_indices(df, cols=None, bra=('<', '>')):
+    pt = esc(bra[0]) + '[0-9*.*]' + esc(bra[1])
+    if not cols:
+        cols = df.columns.values
+    for c in cols:
+        df[c] = [RE.sub(pt, '', d) if d else None for d in df[c]]
+    return df
+
+
 def get_name_and_id_from_path(path):
     p = RE.sub('^/[^/]+/', '', path)
     p = RE.sub('([^]])/', '\\1[1]/', p)
@@ -62,9 +75,8 @@ def resource2row(resource_xml, design, sep, bra, typ, verbose=2):
         for k in design[1].keys():
             xp = design[1][k]
             for u in resource_xml.xpath(xp):
-                if 'value' in u.attrib:
+                for attr in u.attrib.values():
                     pt = rt.getpath(u)
-                    attr = u.attrib['value']
                     if bra:
                         n, i = get_name_and_id_from_path(pt)
                         if k in _:
@@ -80,10 +92,10 @@ def resource2row(resource_xml, design, sep, bra, typ, verbose=2):
     if 2 <= typ:
         xp = design[1] if typ == 2 else ".//*"
         _ = {}
-        for u in resource_xml.xpath(xp):
-            if 'value' in u.attrib:
+        res = resource_xml.xpath(xp)
+        for u in res:
+            for attr in u.attrib.values():
                 pt = rt.getpath(u)
-                attr = u.attrib['value']
                 n, i = get_name_and_id_from_path(pt)
                 if bra:
                     if n in _:
@@ -159,19 +171,6 @@ def bundles2tables(bundles, designs, sep, bra=None, verbose=2):
                     __ = __.drop(columns=i)
         _[k] = __
     return _
-
-
-def esc(s):
-    return RE.sub("([\\.|\\^|\\$|\\*|\\+|\\?|\\(|\\)|\\[|\\{|\\\\\\|\\|])", "\\\\\\1", s)
-
-
-def rm_indices(df, cols=None, bra=('<', '>')):
-    pt = esc(bra[0]) + '[0-9*.*]' + esc(bra[1])
-    if not cols:
-        cols = df.columns.values
-    for c in cols:
-        df[c] = [RE.sub(pt, '', d) if d else None for d in df[c]]
-    return df
 
 
 def fhir_ton(bundles, designs, sep=' | ', remove_empty_cols=True, bra=('<', '>'), verbose=1):
