@@ -79,7 +79,7 @@ def t2s(obj, s='', p=0):
                 s += ' '
             else:
                 s += '\n ' + p * ' '
-            s += k + ':'
+            s += str(k) + ':'
             s = t2s(v, s, p + len(k) + 2)
     elif isinstance(obj, list) or isinstance(obj, tuple):
         bra = ']' if isinstance(obj, list) else ')'
@@ -90,7 +90,7 @@ def t2s(obj, s='', p=0):
             else:
                 s += '\n' + p * ' '
             s += ' ' + str(i) + bra
-            s = t2s(v, s, p + 3)
+            s = t2s(v, s, p + len(str(i)) + 2)
             i += 1
     else:
         s += ' ' + obj

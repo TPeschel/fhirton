@@ -11,7 +11,7 @@ if __name__ == '__main__':
           "code=http://loinc.org|85354-9&" \
           "_include=Observation:patient&" \
           "_include=Observation:encounter&" \
-          "_format=xml&_pretty=true&_count=500" \
+          "_format=xml&_count=500" \
 
     req = endp + req
 

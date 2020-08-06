@@ -12,7 +12,7 @@ library('fhircrackr')
 endp <- "https://hapi.fhir.org/baseR4/"
 
 # fhir request
-req  <- "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
+req  <- "Observation?code=http://loinc.org|85354-9&_include=Observation:patient&_include=Observation:encounter&_format=xml&_count=500"
 #req <- "Observation?_include=Observation:patient&_include=Observation:encounter&_format=xml&_pretty=true&_count=500"
 
 fsq <- paste0(endp, req)
