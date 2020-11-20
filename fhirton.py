@@ -49,11 +49,11 @@ def esc(s):
 
 
 def rm_indices(df, cols=None, bra=('<', '>')):
-    pt = esc(bra[0]) + '[0-9*.*]' + esc(bra[1])
+    pt =  esc(bra[0]) + "[0-9*.*]{5}" + esc(bra[1])
     if not cols:
         cols = df.columns.values
-    for c in cols:
-        df[c] = [RE.sub(pt, '', d) if d else None for d in df[c]]
+    
+    df = df.replace(to_replace=pt, value='', regex=True)
     return df
 
 
@@ -212,3 +212,6 @@ def fhir_search(req, verbose=1, max_bundles=MA.inf):
     if 0 < verbose:
         print("All (", str(r_cnt) + " ) bundles downloaded.")
     return bundles
+
+
+    
