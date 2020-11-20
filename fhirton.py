@@ -49,7 +49,7 @@ def esc(s):
 
 
 def rm_indices(df, cols=None, bra=('<', '>')):
-    pt =  esc(bra[0]) + "[0-9*.*]{5}" + esc(bra[1])
+    pt =  esc(bra[0]) + "[0-9*.*]+" + esc(bra[1])
     if not cols:
         cols = df.columns.values
     
@@ -213,5 +213,15 @@ def fhir_search(req, verbose=1, max_bundles=MA.inf):
         print("All (", str(r_cnt) + " ) bundles downloaded.")
     return bundles
 
+def getMedCodes(df, onlyAPI=False):
+    print(df)
+    if onlyAPI:
+        mask = df["isActive"] == "true"
+        df = df[mask]
 
+    return df
+
+
+def meltMeds(df):
+    pass
     
