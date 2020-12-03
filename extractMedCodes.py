@@ -1,6 +1,21 @@
 import pandas as PA
+from fhirton import rm_indices
 
-def getMedicationIngredientCodes(df, sep, onlyAPI=False):
+def getMedicationIngredientCodes(dct_ing, sep=";", onlyAPI=False):
+    """Extract ingredient specific codes (e.g. ASK) from given dictionary
+
+    Args:
+        dct_ing: dictionary, derived from a flattened FHIR-medication resource via fhir_ton, e.g.: dct_ing = fhir_ton(bundles, {'Medications': ('//Medication/ingredient',)}, sep, bra, verbose))
+        sep: character to seperate different codes, default: ";"
+        onlyAPI: if true -> returns only active pharmaceutical ingredients
+        
+    Returns:
+        list of Pandas dataframes, one dataframe for each ingredient: [ DataFrame(index|system|code) ]
+    """
+
+    df = dct_ing['Medications']
+    df = rm_indices(df)
+
     df_list = []
     if onlyAPI:
         mask = df["isActive"] == "true"
@@ -22,7 +37,19 @@ def getMedicationIngredientCodes(df, sep, onlyAPI=False):
 
     return df_list
     
-def getMedicationCodes(df, sep):
+def getMedicationCodes(dct_med, sep=";"):
+    """Extract medication specific codes (e.g. ATC) from given dictionary
+
+    Args:
+        dct_med: dictionary, derived from a flattened FHIR-medication resource via fhir_ton, e.g.: dct_med = fhir_ton(bundles, {'Medications': ('//Medication',)}, sep, bra, verbose)
+        sep: character to seperate different codes, default: ";"
+        
+    Returns:
+        Pandas dataframe: index|system|code
+    """
+    df_med = dct_med["Medications"]
+    df = rm_indices(df_med)
+
     df = df[["code.coding.code", "code.coding.system"]]
 
     systems = df["code.coding.system"]

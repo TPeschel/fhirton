@@ -125,6 +125,8 @@ venv.bak/
 
 
 *.csv
+*.xml
+*.json
 .dmypy.json
 dmypy.json
 
