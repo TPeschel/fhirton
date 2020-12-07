@@ -1,5 +1,5 @@
 import pandas as PA
-from fhirton import rm_indices
+from ..fhirton import rm_indices
 
 def getMedicationIngredientCodes(dct_ing, sep=";", onlyAPI=False):
     """Extract ingredient specific codes (e.g. ASK) from given dictionary

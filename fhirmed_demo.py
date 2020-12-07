@@ -1,5 +1,7 @@
+"""CAUTION: This demo script loads fhirton as a package to simulate a loading program, so it has to be copied into the parent folder of fhirton to maintain package structure"""
+
 from fhirton import *
-from extractMedCodes import *
+from lib.extractMedCodes import *
 
 bundles = load_bundle("medication_bsp.xml")
 
