@@ -1,4 +1,5 @@
 import pandas as PA
+import numpy as np
 import re as RE
 import requests as REQ
 import math as MA
@@ -212,3 +213,25 @@ def fhir_search(req, verbose=1, max_bundles=MA.inf):
     if 0 < verbose:
         print("All (", str(r_cnt) + " ) bundles downloaded.")
     return bundles
+
+def fhir_melt(df, columns=None, sep=";", all_columns=False):
+    cols_lst = []
+    names = []
+    if all_columns:
+        columns = list(df.columns)
+    for col in columns:
+        nested_lst =  [ x.split(sep) for x in df[col] ]
+        flat_lst = [ item for sublist in nested_lst for item in sublist]
+        cols_lst.append(flat_lst)
+        names.append(col)
+    df_molten = PA.DataFrame(cols_lst).T
+    df_molten.columns=names
+
+    molten_cols = list(df_molten.columns)
+    df_molten_copy = df_molten.copy()
+    for col in molten_cols:
+        for i, item in df_molten[col].iteritems():
+            if item is None:
+                df_molten_copy[col].iloc[i] = df_molten[col].iloc[i-1]
+        
+    return df_molten_copy
